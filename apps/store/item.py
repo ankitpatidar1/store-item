@@ -1,65 +1,66 @@
 from flask_restful import Resource
 from flask_jwt import jwt_required
 from flask import request
-from data.app_database import UserDatabase
+
+from apps.store.models import ItemModel
 import sqlite3
 
 class Item(Resource):
-    # @jwt_required()
-    def get(self,store_id,item_id):
-        cursor,connection  = UserDatabase.get_cursor()
-        cmd = "SELECT * FROM item WHERE store_id=? AND id=?"
-        result = cursor.execute(cmd,(store_id,item_id))
-        row = result.fetchone()
-        print(row)
-        if row:
-            return {"item":{"name":row[1],"price":row[2],"store":row[3]}},200
-        else:
-            return {"message": "item not match"},404
 
-        UserDatabase.close_cursor(connection)
-        
+    # @jwt_required()
+
+
+    def get(self,store_id,item_id):
+        data = {"store_id":store_id,"item_id":item_id}
+        row = ItemModel().fetch(**data)
+        if row :
+            return {
+                "id":row.id,
+                "name":row.name,
+                "price":row.price,
+                "store_id":row.store_id,
+                } , 200
+        else:
+            return {"message": "item not match"} ,404
+
+
 
     def post(self,store_id):
         data = request.get_json()
-        values = list(data.values())
-        cursor,connection  = UserDatabase.get_cursor()
-        cmd = "insert into item(name, price,store_id) values(?,?,?)"
-        cursor.execute(cmd, (*values,store_id))
-        UserDatabase.close_cursor(connection)
-        return {'status': 'item saved successfully'}, 200
+        data.update({"store_id":store_id})
+        msg = ItemModel(data=data).insert()
+        return {'status': msg}, 200
 
     
     def put(self,store_id,item_id):
         data = request.get_json()
-        values = list(data.values())
-        cursor,connection  = UserDatabase.get_cursor()
-        cmd = "update item set name=?, price=? where store_id=? and id=?"
-        cursor.execute(cmd, (*values, store_id,item_id))
-        UserDatabase.close_cursor(connection)
-        return  {'status':'Item updated successfully'}, 200
+        row = ItemModel().fetch(store_id=store_id,item_id=item_id)
+        if row:
+            row.name = data.get('name',row.name)
+            row.price = data.get('price',row.price)
+        else:
+            datd.update({"store_id":store_id})
+            row = ItemModel(data=data)
+        msg = row.insert()
+        return {'status': msg}, 200
     
-    def delete(self,store_id,item_id):        
-        cursor,connection  = UserDatabase.get_cursor()
-        cmd = "DELETE FROM item WHERE store_id=? AND id=?"
-        cursor.execute(cmd, (store_id,item_id))
-        UserDatabase.close_cursor(connection)
-        return  {'status':'Deleted successfully'}, 200
-        
+    def delete(self,store_id,item_id):
+        row = ItemModel().fetch(store_id=store_id,item_id=item_id)
+        if row:
+            msg = row.delete()        
+            return {'status': msg}, 200
+        return {'status': "store not found"}, 400
 
 class ItemList(Resource):
     def get(self):
-        cursor,connection  = UserDatabase.get_cursor()
-        cmd = "SELECT * FROM item"
-        results = cursor.execute(cmd)
-        rows = results.fetchall()
+        rows = ItemModel().fetch()
         return {
             "items": list(map(
                 lambda row:{
-                    "id": row[0],
-                    "name":row[1], 
-                    "price":row[2],
-                    "store_id":row[3],
+                    "id": row.id,
+                    "name":row.name, 
+                    "price":row.price,
+                    "store_id":row.store_id,
                     },rows)
             )
         }

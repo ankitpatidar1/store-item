@@ -1,43 +1,31 @@
 import sqlite3
 from data.app_database import UserDatabase
+from db import db
 
-class User:
-    def __init__(self,_id=0,username='',password=''):
-        self.id = _id
-        self.name = username
-        self.password = password
+class User(db.Model):
+    __tablename__ = 'user'
 
-    def create_row(self, username,password):
-        cursor,connection  = UserDatabase.get_cursor()
-        cmd = "insert into user(name, password) values(?,?)"
-        cursor.execute(cmd, (username,password))
-        UserDatabase.close_cursor(connection)
+    id = db.Column(db.Integer,primary_key=True)
+    username = db.Column(db.String(80))
+    password = db.Column(db.String(80))
 
-    
-    def find_by_username(self, username):
+    def __init__(self,data={}):
+        for key, value in data.items():
+            setattr(self,key,value)
 
-        cursor,connection = UserDatabase.get_cursor()
-        cmd = "SELECT * FROM user WHERE name=?"
-        result = cursor.execute(cmd,(username,))
-        row = result.fetchone()
-        if row:
-            user = User(*row)
-        else:
-            user = None
-        UserDatabase.close_cursor(connection)    
-        return user
-    
-    def find_by_id(self, id):
-        cursor,connection = UserDatabase.get_cursor()
-        cmd = "select * from user where id=?"
-        result = cursor.execute(cmd,(id,))
-        row = result.fetchone()
-        if row:
-            user = User(*row)
-        else:
-            user = None
-        UserDatabase.close_cursor(cursor,connection)
-        return user
+    def create_row(self):
+        db.session.add(self)
+        db.session.commit()
+        return "user added in database"
+
+    @classmethod
+    def find_by_username(cls, username):
+        return cls.query.filter_by(username=username).first()
+        
+    @classmethod
+    def find_by_id(cls, id):
+        return cls.query.filter_by(id=id).first()
+
         
 
 

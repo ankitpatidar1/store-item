@@ -1,41 +1,3 @@
-# from flask import Flask , render_template
-
-# app = Flask(__name__)
-
-# store = [{
-#     "name": "Paras kirana store"
-#     "items":[
-#         {"name":"Soup","price":10.00},
-#         {"name":"bar","price":30.00}
-#         ]
-# }]
-
-# @app.route('/')
-# def home():
-#     return render_template('index.html')
-    
-# @app.route('/store' , methods=['GET'])
-# def get_stores():
-
-
-# @app.route('/store' , methods=['POST'])
-# def create_store(data):
-#     pass
-
-# @app.route('/store/<string:name>' , methods=['POST'])
-# def update_store(id, data):
-#     pass
-
-# @app.route('/store/<string:name>' , methods=['GET'])
-# def get_store(id):
-#     pass
-
-# @app.route('/store/<string:name>' , methods=['DELETE'])
-# def delete_store(id):
-#     pass
-
-# app.run(port=5000)
-
 from flask import Flask ,request
 from flask_restful import Resource, Api
 from flask_jwt import JWT , jwt_required
@@ -46,6 +8,9 @@ from apps.user.userEndpoint import UserApi
 
 app = Flask(__name__)
 app.secret_key = "jose"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/user.db'
+
 
 api = Api(app)
 
@@ -63,4 +28,7 @@ api.add_resource(Item,'/store/<int:store_id>/item/<int:item_id>',endpoint='item'
 api.add_resource(Item,'/store/<int:store_id>/item',endpoint='add_item')
 api.add_resource(ItemList,'/items')
 
-app.run(port=6000, debug=True)
+if __name__ == '__main__':
+    from db import db
+    db.init_app(app)
+    app.run(port=5000, debug=True)

@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('user.db')
+conn = sqlite3.connect('data/user.db')
 cursor = conn.cursor() 
 cmd = "CREATE TABLE user (id INTEGER PRIMARY KEY AUTOINCREMENT , name TEXT, password TEXT)"
 cursor.execute(cmd)
