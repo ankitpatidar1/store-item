@@ -5,6 +5,7 @@ from apps.user.security import authenticate,identity
 from apps.store.item import Item, ItemList
 from apps.store.store import Store, StoreList , storeItem
 from apps.user.userEndpoint import UserApi
+from db import db
 
 app = Flask(__name__)
 app.secret_key = "jose"
@@ -13,6 +14,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/user.db'
 
 
 api = Api(app)
+db.init_app(app)
+
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 jwt = JWT(app,authenticate,identity)
 
@@ -29,6 +35,4 @@ api.add_resource(Item,'/store/<int:store_id>/item',endpoint='add_item')
 api.add_resource(ItemList,'/items')
 
 if __name__ == '__main__':
-    from db import db
-    db.init_app(app)
     app.run(port=5000, debug=True)
