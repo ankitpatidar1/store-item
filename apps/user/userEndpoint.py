@@ -9,3 +9,14 @@ class UserApi(Resource):
         data = request.get_json()
         msg = User(data).create_row()
         return {"status":msg}
+
+    def get(self):
+        users = User().fetch()
+        return {
+            "users":list(
+                map(
+                    lambda user:{
+                        "id":user.id,
+                        "username":user.username,
+                        "password":user.password
+                    },users)) }

@@ -25,7 +25,8 @@ jwt = JWT(app,authenticate,identity)
 # api.add_resource(ItemList,'/item')
 # api.add_resource(Item,'/item/<string:name>')
 
-api.add_resource(UserApi,'/user') # done
+api.add_resource(UserApi,'/user', endpoint='user') # done
+api.add_resource(UserApi,'/user/<int:user_id>',endpoint='update_user')
 api.add_resource(Store,'/store', endpoint='add_store')
 api.add_resource(Store,'/store/<int:store_id>',endpoint='store')
 api.add_resource(StoreList,'/stores')

@@ -26,6 +26,15 @@ class User(db.Model):
     def find_by_id(cls, id):
         return cls.query.filter_by(id=id).first()
 
+    @classmethod
+    def fetch(cls,user_id=None):
+        query = cls.query        
+        if user_id:
+            return query.filter_by(id=user_id).first()
+        else:
+            return query.all()
+
+
         
 
 
