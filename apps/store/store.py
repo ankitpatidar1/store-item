@@ -1,5 +1,5 @@
 from flask_restful import Resource
-from flask_jwt import jwt_required
+from flask_jwt_extended import jwt_required , get_jwt ,get_jwt_identity
 from flask import request
 from apps.store.models import StoreModel , ItemModel
 from data.app_database import UserDatabase
@@ -13,7 +13,7 @@ class Store(Resource):
             return {"store":{"name":row.name}},200
         else:
             return {"message": "item not match"},404
-
+    @jwt_required(fresh=True)
     def post(self):
         data = request.get_json()
         msg = StoreModel(data=data).insert()
@@ -28,8 +28,14 @@ class Store(Resource):
             fetch_row = StoreModel(data=data)
         msg = fetch_row.insert()
         return {'status': msg}, 200
-        
+
+    @jwt_required()
     def delete(self,store_id):
+        claims = get_jwt()
+        if not claims['is_admin']:
+            return { 
+                "message": "need admin previledges" 
+                } ,401
         fetch_row = StoreModel().fetch(store_id=store_id)
         if fetch_row:
             msg = fetch_row.delete()     
@@ -38,9 +44,17 @@ class Store(Resource):
 
 
 class StoreList(Resource):
+
+    @jwt_required(optional=True)
     def get(self):
+        user_id = get_jwt_identity()
         rows = StoreModel().fetch()
-        return {"stores": list(map(lambda row:{"id": row.id,"name":row.name},rows))}
+        if user_id:
+            return {"stores": list(map(lambda row:{"id": row.id,"name":row.name},rows))}
+        else:
+            return {"stores": list(map(lambda row:{"name":row.name},rows)),
+            "message": "please login to get more info"}
+
 
 class storeItem(Resource):
     def get(self,store_id):
