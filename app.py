@@ -2,6 +2,7 @@ from flask import Flask ,request ,jsonify
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager , jwt_required
 from flask_uploads import  configure_uploads
+from flask_migrate import Migrate
 from marshmallow import ValidationError
 import os
 from apps.store.item import Item, ItemList
@@ -22,7 +23,7 @@ from ma import ma
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/user.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("SQLALCHEMY_DATABASE_URI",'sqlite:///data/user.db')
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['JWT_BACKLIST_ENABLED'] = True
 app.config['JWT_BACKLIST_TOKEN_CHECK'] = ['access','refresh']
@@ -31,6 +32,8 @@ app.config['MAX_CONTENT_LENGTH'] = 10*1024*1024
 api = Api(app)
 db.init_app(app)
 ma.init_app(app)
+migrate = Migrate(app, db)
+
 # patch_request_class(app, 10*1024*1024)
 configure_uploads(app, IMAGE_SET)
 
