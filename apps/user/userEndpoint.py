@@ -22,9 +22,8 @@ class UserApi(Resource):
         user  = UserSchema(load_instance=True).load(request.get_json())
         instance = user.create_row()
         
-        data = request.get_json()
-        msg = User(data).create_row()
-        return {"status":msg}
+        # send  user confirmation mail
+        user.send_confirmation()
         return user_schema.dump(instance)
 
     def get(self):
