@@ -8,10 +8,6 @@ class StoreModel(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     name = db.Column(db.String(80))
     
-    def __init__(self,data={}):
-        for key, value in data.items():
-            setattr(self,key,value)
-
     def find_by_name(self,name):
         return self.__class__.query.filter_by(name=name).first()
         
@@ -37,13 +33,11 @@ class ItemModel(db.Model):
     __tablename__='item'
 
     id = db.Column(db.Integer,primary_key=True)
-    name = db.Column(db.String(80))
-    price = db.Column(db.Float)
-    store_id = db.Column(db.Integer,db.ForeignKey('store.id'))
+    name = db.Column(db.String(80),nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    store_id = db.Column(db.Integer,db.ForeignKey('store.id'),nullable=False)
+    store = db.relationship('StoreModel')
 
-    def __init__(self,data={}):
-        for key, value in data.items():
-            setattr(self,key,value)
 
     @classmethod
     def find_by_name(cls,name):

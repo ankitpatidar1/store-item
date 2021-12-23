@@ -6,28 +6,30 @@ from flask_jwt_extended import (
     create_refresh_token,
     get_jwt_identity,
 )
-from flask import request
+from flask import request , make_response, render_template
 from werkzeug.security import safe_str_cmp
 from apps.user.user import User
 from blacklist import BLACKLIST
+from apps.user.schema import UserSchema
 
+user_schema = UserSchema()
+user_list_schema = UserSchema(many=True)
 
 class UserApi(Resource):
+    
     def post(self):
+
+        user  = UserSchema(load_instance=True).load(request.get_json())
+        instance = user.create_row()
+        
         data = request.get_json()
         msg = User(data).create_row()
         return {"status":msg}
+        return user_schema.dump(instance)
 
     def get(self):
         users = User().fetch()
-        return {
-            "users":list(
-                map(
-                    lambda user:{
-                        "id":user.id,
-                        "username":user.username,
-                        "password":user.password
-                    },users)) }
+        return {"users":user_list_schema.dump(users)}
 
 
 class UserLogin(Resource):
@@ -35,12 +37,16 @@ class UserLogin(Resource):
         data = request.get_json()
         user = User.find_by_username(data['username'])
         if user and safe_str_cmp(user.password,data['password']):
-            access_token = create_access_token(identity = user.id,fresh=True)
-            refresh_token = create_refresh_token(user.id)
-            return {
-                "access_token": access_token,
-                "refresh_token": refresh_token
-            }
+            if user.activated:
+                access_token = create_access_token(identity = user.id,fresh=True)
+                refresh_token = create_refresh_token(user.id)
+                return {
+                    "access_token": access_token,
+                    "refresh_token": refresh_token
+                }
+            else:
+                return {'message': "the <{}> user is not activated ".format(user.username)} , 400
+
         return {"message": "Invalid credentials"},401
 
 
@@ -57,3 +63,18 @@ class UserLogout(Resource):
         jti = get_jwt()['jti']
         BLACKLIST.add(jti)
         return {"message":"Logout successfully"} , 200
+
+class UserConfirm(Resource):
+    @classmethod
+    def get(cls,user_id: int):
+        user = User.find_by_id(user_id)
+
+        if not user:
+            return {"message": "user not found"}, 404
+        
+        user.activated = True
+        user.create_row()
+        headers = {"Content-Type": "text/html"}
+        return make_response(render_template("email_confirmation.html", email=user.username),200, headers)
+
+            

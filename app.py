@@ -1,16 +1,24 @@
 from flask import Flask ,request ,jsonify
 from flask_restful import Resource, Api
 from flask_jwt_extended import JWTManager , jwt_required
+from marshmallow import ValidationError
+import os
 from apps.store.item import Item, ItemList
 from apps.store.store import Store, StoreList , storeItem
 from apps.user.userEndpoint import UserApi , UserLogin , TokenRefresh , UserLogout
+from apps.user.userEndpoint import (
+    UserApi, 
+    UserLogin,
+    TokenRefresh,
+    UserLogout,
+    UserConfirm,
+)
 from db import db
 from blacklist import BLACKLIST
-
-
+from ma import ma
 
 app = Flask(__name__)
-app.secret_key = "jose"
+app.secret_key = os.environ.get("SECRET_KEY")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/user.db'
 app.config['PROPAGATE_EXCEPTIONS'] = True
@@ -20,12 +28,18 @@ app.config['JWT_BACKLIST_TOKEN_CHECK'] = ['access','refresh']
 
 api = Api(app)
 db.init_app(app)
+ma.init_app(app)
 
 @app.before_first_request
 def create_tables():
     db.create_all()
 
 jwt = JWTManager(app)
+
+
+@app.errorhandler(ValidationError)
+def habdle_marshmallow_error(err):
+    return jsonify(err.normalized_messages()),400
 
 @jwt.additional_claims_loader
 def add_claims_to_jwt(identity):
@@ -59,16 +73,17 @@ def token_not_refresh_callback():
             "error":"Need_Fresh_Token",
         }
     ), 401
+
 @jwt.revoked_token_loader
 def revoked_token_response(jwt_header, jwt_payload):
     return jsonify(msg=f"I'm sorry {jwt_payload['sub']} I can't let you do that")
-# api.add_resource(ItemList,'/item')
-# api.add_resource(Item,'/item/<string:name>')
 
-api.add_resource(UserApi,'/user', endpoint='user') # done
-api.add_resource(UserLogin,'/user/login') # done
-api.add_resource(TokenRefresh,'/user/refresh') # done
-api.add_resource(UserLogout,'/user/logout') # done
+
+api.add_resource(UserApi,'/user', endpoint='user')
+api.add_resource(UserLogin,'/user/login')
+api.add_resource(TokenRefresh,'/user/refresh')
+api.add_resource(UserLogout,'/user/logout')
+api.add_resource(UserConfirm,'/user/confirm/<int:user_id>')
 
 api.add_resource(UserApi,'/user/<int:user_id>',endpoint='update_user')
 
