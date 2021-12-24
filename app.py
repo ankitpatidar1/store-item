@@ -5,6 +5,7 @@ from flask_uploads import  configure_uploads
 from flask_migrate import Migrate
 from marshmallow import ValidationError
 import os
+from dotenv import load_dotenv
 from apps.store.item import Item, ItemList
 from apps.store.store import Store, StoreList , storeItem
 from apps.store.image import ImageUpload
@@ -16,14 +17,19 @@ from apps.user.userEndpoint import (
     UserLogout,
     UserConfirm,
 )
+
 from db import db
 from blacklist import BLACKLIST
 from ma import ma
+load_dotenv(".env")
+from apps.user.github_login import GithubLogin , GithubAutherize
+from apps.user.facebook_login import FacebookLogin , FacebookAutherize
+from oa import oauth
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("SQLALCHEMY_DATABASE_URI",'sqlite:///data/user.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/user.db'
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['JWT_BACKLIST_ENABLED'] = True
 app.config['JWT_BACKLIST_TOKEN_CHECK'] = ['access','refresh']
@@ -32,6 +38,7 @@ app.config['MAX_CONTENT_LENGTH'] = 10*1024*1024
 api = Api(app)
 db.init_app(app)
 ma.init_app(app)
+oauth.init_app(app)
 migrate = Migrate(app, db)
 
 # patch_request_class(app, 10*1024*1024)
@@ -103,6 +110,10 @@ api.add_resource(Item,'/store/<int:store_id>/item',endpoint='add_item')
 api.add_resource(ItemList,'/items')
 api.add_resource(ImageUpload,'/upload/image', endpoint="image_upload")
 api.add_resource(ImageUpload,'/image/<string:filename>')
+api.add_resource(GithubLogin, '/login/github')
+api.add_resource(GithubAutherize, '/login/github/authorized' ,endpoint="github.authorize")
+api.add_resource(FacebookLogin, '/login/facebook')
+api.add_resource(FacebookAutherize, '/login/facebook/authorized' ,endpoint="facebook.authorize")
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

@@ -10,9 +10,10 @@ class User(db.Model):
 
     id = db.Column(db.Integer,primary_key=True)
     username = db.Column(db.String(80),nullable=False)
-    password = db.Column(db.String(80),nullable=False)
+    password = db.Column(db.String(80))
     email = db.Column(db.String(80),nullable=False, unique=True)
     activated = db.Column(db.Boolean,default=False)
+    status = db.Column(db.Boolean,default=True)
     
     def create_row(self):
         db.session.add(self)
